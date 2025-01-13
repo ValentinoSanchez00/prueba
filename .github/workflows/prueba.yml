@@ -13,5 +13,5 @@ jobs:
     - name: Run ZAP
       uses: zaproxy/action-full-scan@v0.12.0
       with:
-        target: 'route-develop-vsanchez.ez-ibm-openshift-vpc-lkmc-b9be9ed6ae33d743815245d0b773ebc7-0000.eu-es.containers.appdomain.cloud'
+        target: '${{ github.event.inputs.url }}'
         rules_file_name: '.zap/rules.tsv'
