@@ -5,7 +5,8 @@ on:
       url:
         description: 'URL a probar'
         required: true
-
+permissions:
+  issues: write
 jobs:
   zap:
     runs-on: ubuntu-latest
@@ -14,4 +15,4 @@ jobs:
       uses: zaproxy/action-full-scan@v0.12.0
       with:
         target: '${{ github.event.inputs.url }}'
-        rules_file_name: '.zap/rules.tsv'
+        
