@@ -19,9 +19,19 @@ jobs:
       with:
         target: '${{ github.event.inputs.url }}'
         token: ${{ secrets.TOKEN }}
-        fail_on_warn: false 
-        format: html        
-        report: 'zap-report.html' 
+        artifact_name: zap_scan
 
-    - name: cat zap-report.html
-      run: cat zap-report.html
+    - name: Copy Reports to Runner
+      run: |
+        cp /home/user/actions-runner/_work/prueba/prueba/report_html.html .
+        cp /home/user/actions-runner/_work/prueba/prueba/report_md.md .
+        cp /home/user/actions-runner/_work/prueba/prueba/report_json.json .
+
+    - name: Upload ZAP Report
+      uses: actions/upload-artifact@v3
+      with:
+        name: zap-report
+        path: |
+          report_html.html
+          report_md.md
+          report_json.json
