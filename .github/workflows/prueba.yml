@@ -9,7 +9,7 @@ permissions:
   issues: write
 jobs:
   zap:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
     - name: Run ZAP
       uses: zaproxy/action-full-scan@v0.12.0
