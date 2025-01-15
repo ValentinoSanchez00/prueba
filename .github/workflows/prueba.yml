@@ -21,25 +21,36 @@ jobs:
         echo "Instalando jq..."
         sudo apt-get update && sudo apt-get install -y jq
 
+    - name: Obtener IP de la máquina
+      id: get_ip
+      run: |
+        echo "Obteniendo IP de la máquina..."
+        MACHINE_IP=$(hostname -I | awk '{print $1}')
+        echo "La IP de la máquina es: $MACHINE_IP"
+        echo "MACHINE_IP=$MACHINE_IP" >> $GITHUB_ENV
+
     - name: Configurar variables
       env:
         ZAP_API_KEY: ${{ secrets.ZAP_API_KEY }}
         SCAN_URL: ${{ github.event.inputs.url }}
+        MACHINE_IP: ${{ env.MACHINE_IP }}
       run: |
         echo "Configurando variables..."
         if [ -z "$ZAP_API_KEY" ]; then
           echo "ERROR: ZAP_API_KEY no está configurado."
           exit 1
         fi
+        echo "IP de ZAP configurada en: $MACHINE_IP"
 
     - name: Iniciar escaneo con ZAP
       id: iniciar_scan
       env:
         ZAP_API_KEY: ${{ secrets.ZAP_API_KEY }}
         SCAN_URL: ${{ github.event.inputs.url }}
+        MACHINE_IP: ${{ env.MACHINE_IP }}
       run: |
         echo "Iniciando escaneo..."
-        RESPONSE=$(curl -s "http://localhost:8080/JSON/spider/action/scan/?apikey=$ZAP_API_KEY&url=$SCAN_URL&contextName=&recurse=")
+        RESPONSE=$(curl -s "http://${MACHINE_IP}:8080/JSON/spider/action/scan/?apikey=$ZAP_API_KEY&url=$SCAN_URL&contextName=&recurse=")
         echo "Respuesta de la API: $RESPONSE"
 
         if ! echo "$RESPONSE" | jq empty; then
@@ -59,10 +70,12 @@ jobs:
     - name: Monitorizar progreso del escaneo
       env:
         ZAP_API_KEY: ${{ secrets.ZAP_API_KEY }}
+        MACHINE_IP: ${{ env.MACHINE_IP }}
+        SCAN_ID: ${{ env.SCAN_ID }}
       run: |
         echo "Monitorizando progreso del escaneo..."
         while true; do
-          STATUS=$(curl -s "http://localhost:8080/JSON/spider/view/status/?apikey=$ZAP_API_KEY&scanId=$SCAN_ID" | jq -r '.status')
+          STATUS=$(curl -s "http://${MACHINE_IP}:8080/JSON/spider/view/status/?apikey=$ZAP_API_KEY&scanId=$SCAN_ID" | jq -r '.status')
           echo "Progreso del escaneo: $STATUS% completado"
           if [ "$STATUS" == "100" ]; then
             echo "Escaneo completado."
@@ -74,11 +87,12 @@ jobs:
     - name: Generar informes
       env:
         ZAP_API_KEY: ${{ secrets.ZAP_API_KEY }}
+        MACHINE_IP: ${{ env.MACHINE_IP }}
       run: |
         echo "Generando informes..."
-        curl "http://localhost:8080/OTHER/core/other/htmlreport/?apikey=$ZAP_API_KEY" -o report_html.html
-        curl "http://localhost:8080/OTHER/core/other/mdreport/?apikey=$ZAP_API_KEY" -o report_md.md
-        curl "http://localhost:8080/OTHER/core/other/jsonreport/?apikey=$ZAP_API_KEY" -o report_json.json
+        curl "http://${MACHINE_IP}:8080/OTHER/core/other/htmlreport/?apikey=$ZAP_API_KEY" -o report_html.html
+        curl "http://${MACHINE_IP}:8080/OTHER/core/other/mdreport/?apikey=$ZAP_API_KEY" -o report_md.md
+        curl "http://${MACHINE_IP}:8080/OTHER/core/other/jsonreport/?apikey=$ZAP_API_KEY" -o report_json.json
 
         mkdir -p reports
         mv report_html.html reports/
