@@ -39,10 +39,17 @@ jobs:
         SCAN_URL: ${{ github.event.inputs.url }}
       run: |
         echo "Iniciando escaneo..."
-        SCAN_ID=$(curl -s "http://localhost:8080/JSON/spider/action/scan/?apikey=$ZAP_API_KEY&url=$SCAN_URL&contextName=&recurse=" | jq -r '.scan')
+        RESPONSE=$(curl -s "http://localhost:8080/JSON/spider/action/scan/?apikey=$ZAP_API_KEY&url=$SCAN_URL&contextName=&recurse=")
+        echo "Respuesta de la API: $RESPONSE"
 
+        if ! echo "$RESPONSE" | jq empty; then
+          echo "La respuesta no es un JSON válido: $RESPONSE"
+          exit 1
+        fi
+
+        SCAN_ID=$(echo $RESPONSE | jq -r '.scan')
         if [ "$SCAN_ID" == "null" ] || [ -z "$SCAN_ID" ]; then
-          echo "No se pudo iniciar el escaneo."
+          echo "No se pudo iniciar el escaneo. Respuesta: $RESPONSE"
           exit 1
         fi
 
