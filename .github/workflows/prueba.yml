@@ -5,8 +5,10 @@ on:
       url:
         description: 'URL a probar'
         required: true
+
 permissions:
   issues: write
+
 jobs:
   zap:
     runs-on: self-hosted
@@ -14,18 +16,68 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
 
-    - name: Run ZAP Full Scan
-      uses: zaproxy/action-full-scan@v0.12.0
-      with:
-        target: '${{ github.event.inputs.url }}'
-        token: ${{ secrets.TOKEN }}
-        artifact_name: zap_scan
+    - name: Configurar variables
+      env:
+        ZAP_API_KEY: ${{ secrets.ZAP_API_KEY }}
+        SCAN_URL: ${{ github.event.inputs.url }}
+      run: |
+        echo "Configurando variables..."
+        if [ -z "$ZAP_API_KEY" ]; then
+          echo "ERROR: ZAP_API_KEY no está configurado."
+          exit 1
+        fi
 
-    - name: Upload ZAP Report
+    - name: Iniciar escaneo con ZAP
+      id: iniciar_scan
+      env:
+        ZAP_API_KEY: ${{ secrets.ZAP_API_KEY }}
+        SCAN_URL: ${{ github.event.inputs.url }}
+      run: |
+        echo "Iniciando escaneo..."
+        SCAN_ID=$(curl -s "http://localhost:8080/JSON/spider/action/scan/?apikey=$ZAP_API_KEY&url=$SCAN_URL&contextName=&recurse=" | jq -r '.scan')
+
+        if [ "$SCAN_ID" == "null" ] || [ -z "$SCAN_ID" ]; then
+          echo "No se pudo iniciar el escaneo."
+          exit 1
+        fi
+
+        echo "Escaneo iniciado con ID: $SCAN_ID"
+        echo "SCAN_ID=$SCAN_ID" >> $GITHUB_ENV
+
+    - name: Monitorizar progreso del escaneo
+      env:
+        ZAP_API_KEY: ${{ secrets.ZAP_API_KEY }}
+      run: |
+        echo "Monitorizando progreso del escaneo..."
+        while true; do
+          STATUS=$(curl -s "http://localhost:8080/JSON/spider/view/status/?apikey=$ZAP_API_KEY&scanId=$SCAN_ID" | jq -r '.status')
+          echo "Progreso del escaneo: $STATUS% completado"
+          if [ "$STATUS" == "100" ]; then
+            echo "Escaneo completado."
+            break
+          fi
+          sleep 10
+        done
+
+    - name: Generar informes
+      env:
+        ZAP_API_KEY: ${{ secrets.ZAP_API_KEY }}
+      run: |
+        echo "Generando informes..."
+        curl "http://localhost:8080/OTHER/core/other/htmlreport/?apikey=$ZAP_API_KEY" -o report_html.html
+        curl "http://localhost:8080/OTHER/core/other/mdreport/?apikey=$ZAP_API_KEY" -o report_md.md
+        curl "http://localhost:8080/OTHER/core/other/jsonreport/?apikey=$ZAP_API_KEY" -o report_json.json
+
+        mkdir -p reports
+        mv report_html.html reports/
+        mv report_md.md reports/
+        mv report_json.json reports/
+
+    - name: Subir informe de ZAP
       uses: actions/upload-artifact@v3
       with:
         name: zap-report
         path: |
-          /home/user/actions-runner/_work/prueba/prueba/report_html.html
-          /home/user/actions-runner/_work/prueba/prueba/report_md.md
-          /home/user/actions-runner/_work/prueba/prueba/report_json.json
+          reports/report_html.html
+          reports/report_md.md
+          reports/report_json.json

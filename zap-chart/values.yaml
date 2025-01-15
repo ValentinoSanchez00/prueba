@@ -1,0 +1,10 @@
+image:
+  repository: icr.io/ctenorio-cr/zap2docker-stable
+  tag: latest
+resources:
+  limits:
+    cpu: "2"
+    memory: "4Gi"
+  requests:
+    cpu: "1"
+    memory: "2Gi"

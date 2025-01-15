@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: zap-deploy
+  namespace: vsanchez
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: zap
+  template:
+    metadata:
+      labels:
+        app: zap
+    spec:
+      imagePullSecrets:
+        - name: ibm-registry-secret
+      containers:
+        - name: zap
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          ports:
+            - name: http
+              containerPort: 8080
+            - name: control
+              containerPort: 8090
+          command: ["zap-webswing.sh"]
+          args: ["-host", "0.0.0.0", "-port", "8090"]
+          securityContext:
+            runAsUser: 1000680000
+            runAsGroup: 1000680000
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+            allowPrivilegeEscalation: false
+            privileged: false
+            capabilities:
+              drop:
+                - ALL
+          
+            
+          resources:
+            requests:
+              memory: "{{ .Values.resources.requests.memory }}"
+              cpu: "{{ .Values.resources.requests.cpu }}"
+            limits:
+              memory: "{{ .Values.resources.limits.memory }}"
+              cpu: "{{ .Values.resources.limits.cpu }}"
+ 
