@@ -10,4 +10,4 @@ spec:
     - port: 8099
       targetPort: 8099
   
-  type: ClusterIP
+  type: NodePort
