@@ -1,5 +1,6 @@
 name: Prueba de ZAP
-on: 
+
+on:
   workflow_dispatch:
     inputs:
       url:
@@ -13,97 +14,49 @@ jobs:
   zap:
     runs-on: self-hosted
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-    - name: Instalar jq
-      run: |
-        echo "Instalando jq..."
-        sudo apt-get update && sudo apt-get install -y jq
-
-    - name: Obtener IP de la máquina
-      id: get_ip
-      run: |
-        echo "Obteniendo IP de la máquina..."
-        MACHINE_IP=$(hostname -I | awk '{print $1}')
-        echo "La IP de la máquina es: $MACHINE_IP"
-        echo "MACHINE_IP=$MACHINE_IP" >> $GITHUB_ENV
-
-    - name: Configurar variables
-      env:
-        ZAP_API_KEY: ${{ secrets.ZAP_API_KEY }}
-        SCAN_URL: ${{ github.event.inputs.url }}
-        MACHINE_IP: ${{ env.MACHINE_IP }}
-      run: |
-        echo "Configurando variables..."
-        if [ -z "$ZAP_API_KEY" ]; then
-          echo "ERROR: ZAP_API_KEY no está configurado."
-          exit 1
-        fi
-        echo "IP de ZAP configurada en: $MACHINE_IP"
-
-    - name: Iniciar escaneo con ZAP
-      id: iniciar_scan
-      env:
-        ZAP_API_KEY: ${{ secrets.ZAP_API_KEY }}
-        SCAN_URL: ${{ github.event.inputs.url }}
-        MACHINE_IP: ${{ env.MACHINE_IP }}
-      run: |
-        echo "Iniciando escaneo..."
-        RESPONSE=$(curl -s "http://${MACHINE_IP}:8080/JSON/spider/action/scan/?apikey=$ZAP_API_KEY&url=$SCAN_URL&contextName=&recurse=")
-        echo "Respuesta de la API: $RESPONSE"
-
-        if ! echo "$RESPONSE" | jq empty; then
-          echo "La respuesta no es un JSON válido: $RESPONSE"
-          exit 1
-        fi
-
-        SCAN_ID=$(echo $RESPONSE | jq -r '.scan')
-        if [ "$SCAN_ID" == "null" ] || [ -z "$SCAN_ID" ]; then
-          echo "No se pudo iniciar el escaneo. Respuesta: $RESPONSE"
-          exit 1
-        fi
-
-        echo "Escaneo iniciado con ID: $SCAN_ID"
-        echo "SCAN_ID=$SCAN_ID" >> $GITHUB_ENV
-
-    - name: Monitorizar progreso del escaneo
-      env:
-        ZAP_API_KEY: ${{ secrets.ZAP_API_KEY }}
-        MACHINE_IP: ${{ env.MACHINE_IP }}
-        SCAN_ID: ${{ env.SCAN_ID }}
-      run: |
-        echo "Monitorizando progreso del escaneo..."
-        while true; do
-          STATUS=$(curl -s "http://${MACHINE_IP}:8080/JSON/spider/view/status/?apikey=$ZAP_API_KEY&scanId=$SCAN_ID" | jq -r '.status')
-          echo "Progreso del escaneo: $STATUS% completado"
-          if [ "$STATUS" == "100" ]; then
-            echo "Escaneo completado."
-            break
+      - name: Configurar variables
+        env:
+          ZAP_API_KEY: ${{ secrets.ZAP_API_KEY }}
+          SCAN_URL: ${{ github.event.inputs.url }}
+        run: |
+          echo "Configurando variables..."
+          if [ -z "$ZAP_API_KEY" ]; then
+            echo "ERROR: ZAP_API_KEY no está configurado."
+            exit 1
           fi
-          sleep 10
-        done
+          echo "URL configurada para el escaneo: $SCAN_URL"
 
-    - name: Generar informes
-      env:
-        ZAP_API_KEY: ${{ secrets.ZAP_API_KEY }}
-        MACHINE_IP: ${{ env.MACHINE_IP }}
-      run: |
-        echo "Generando informes..."
-        curl "http://${MACHINE_IP}:8080/OTHER/core/other/htmlreport/?apikey=$ZAP_API_KEY" -o report_html.html
-        curl "http://${MACHINE_IP}:8080/OTHER/core/other/mdreport/?apikey=$ZAP_API_KEY" -o report_md.md
-        curl "http://${MACHINE_IP}:8080/OTHER/core/other/jsonreport/?apikey=$ZAP_API_KEY" -o report_json.json
+      - name: Ejecutar ZAP Spider
+        env:
+          ZAP_API_URL: "http://localhost:8080"
+          SCAN_URL: ${{ github.event.inputs.url }}
+        run: |
+          echo "Iniciando el Spider de ZAP..."
+          curl "${ZAP_API_URL}/JSON/spider/action/scan/?url=${SCAN_URL}" -o zap_spider_start.json
+          cat zap_spider_start.json
 
-        mkdir -p reports
-        mv report_html.html reports/
-        mv report_md.md reports/
-        mv report_json.json reports/
+      - name: Monitorizar estado del Spider
+        env:
+          ZAP_API_URL: "http://localhost:8080"
+        run: |
+          echo "Comprobando estado del Spider..."
+          until [ "$(curl -s "${ZAP_API_URL}/JSON/spider/view/status/" | grep -o '100')" ]; do
+            echo 'El Spider está en ejecución...'; sleep 5;
+          done
+          echo "El Spider ha finalizado."
 
-    - name: Subir informe de ZAP
-      uses: actions/upload-artifact@v3
-      with:
-        name: zap-report
-        path: |
-          reports/report_html.html
-          reports/report_md.md
-          reports/report_json.json
+      - name: Generar informe HTML
+        env:
+          ZAP_API_URL: "http://localhost:8080"
+        run: |
+          echo "Generando informe en HTML..."
+          curl "${ZAP_API_URL}/OTHER/core/other/htmlreport/" -o "zap_report_$(date +'%Y%m%d_%H%M%S').html"
+
+      - name: Subir informe de ZAP
+        uses: actions/upload-artifact@v3
+        with:
+          name: zap-report
+          path: zap_report_*.html
