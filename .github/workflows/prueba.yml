@@ -30,7 +30,7 @@ jobs:
           echo "URL configurada para el escaneo: $SCAN_URL"
       - name: Prueba curl
         run: |
-          curl -k https://zap-api-route-vsanchez.ez-ibm-openshift-vpc-3zyj-b9be9ed6ae33d743815245d0b773ebc7-0000.eu-es.containers.appdomain.cloud
+          curl -vk https://zap-api-route-vsanchez.ez-ibm-openshift-vpc-3zyj-b9be9ed6ae33d743815245d0b773ebc7-0000.eu-es.containers.appdomain.cloud
 
 
       - name: Logearme Cluster IBM
