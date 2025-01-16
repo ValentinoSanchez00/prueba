@@ -28,7 +28,11 @@ jobs:
             exit 1
           fi
           echo "URL configurada para el escaneo: $SCAN_URL"
-      
+      - name: Prueba curl
+        run: |
+          curl -vkL https://zap-api-route-vsanchez.ez-ibm-openshift-vpc-3zyj-b9be9ed6ae33d743815245d0b773ebc7-0000.eu-es.containers.appdomain.cloud
+
+
       - name: Logearme Cluster IBM
         env:
             APIKEY: ${{ secrets.IBM_API_KEY }}
@@ -44,7 +48,7 @@ jobs:
 
       - name: Ejecutar ZAP Spider
         env:
-          ZAP_API_URL: 'https://zap-api-route-test-ctenorio.ez-ibm-openshift-vpc-3zyj-b9be9ed6ae33d743815245d0b773ebc7-0000.eu-es.containers.appdomain.cloud:8099/JSON/spider/action/scan/?url=https://juice-shop.herokuapp.com'
+          ZAP_API_URL: 'https://zap-api-route-vsanchez.ez-ibm-openshift-vpc-3zyj-b9be9ed6ae33d743815245d0b773ebc7-0000.eu-es.containers.appdomain.cloud'
           SCAN_URL: ${{ github.event.inputs.url }}
         run: |
           echo "Iniciando el Spider de ZAP..."
@@ -53,7 +57,7 @@ jobs:
 
       - name: Monitorizar estado del Spider
         env:
-          ZAP_API_URL: 'https://zap-api-route-test-ctenorio.ez-ibm-openshift-vpc-3zyj-b9be9ed6ae33d743815245d0b773ebc7-0000.eu-es.containers.appdomain.cloud:8099/JSON/spider/action/scan/?url=https://juice-shop.herokuapp.com'
+          ZAP_API_URL: 'https://zap-api-route-vsanchez.ez-ibm-openshift-vpc-3zyj-b9be9ed6ae33d743815245d0b773ebc7-0000.eu-es.containers.appdomain.cloud'
         run: |
           echo "Comprobando estado del Spider..."
           until [ "$(curl -s "${ZAP_API_URL}/JSON/spider/view/status/" | grep -o '100')" ]; do
@@ -63,7 +67,7 @@ jobs:
 
       - name: Generar informe HTML
         env:
-          ZAP_API_URL: 'https://zap-api-route-test-ctenorio.ez-ibm-openshift-vpc-3zyj-b9be9ed6ae33d743815245d0b773ebc7-0000.eu-es.containers.appdomain.cloud:8099/JSON/spider/action/scan/?url=https://juice-shop.herokuapp.com'
+          ZAP_API_URL: 'https://zap-api-route-vsanchez.ez-ibm-openshift-vpc-3zyj-b9be9ed6ae33d743815245d0b773ebc7-0000.eu-es.containers.appdomain.cloud'
         run: |
           echo "Generando informe en HTML..."
           curl "${ZAP_API_URL}/OTHER/core/other/htmlreport/" -o "zap_report_$(date +'%Y%m%d_%H%M%S').html"
