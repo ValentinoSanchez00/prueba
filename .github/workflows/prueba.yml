@@ -28,7 +28,21 @@ jobs:
             exit 1
           fi
           echo "URL configurada para el escaneo: $SCAN_URL"
-
+      
+      - name: Logearme Cluster IBM
+        env:
+            APIKEY: ${{ secrets.IBM_API_KEY }}
+        run: |
+              echo "Logeándome en el clúster IBM..."
+              ls -l
+              ibmcloud login --apikey ${APIKEY} -r eu-gb
+              ibmcloud target -g Stemdo_Sandbox
+              ibmcloud cr region-set global
+              ibmcloud cr login
+              ibmcloud cr namespace-add cr-vsanchez
+              ibmcloud plugin install container-service
+              ibmcloud plugin update ks
+              ibmcloud ks cluster config --cluster ez-ibm-openshift-vpc-3zyj --admin
       - name: Ejecutar ZAP Spider
         env:
           ZAP_API_URL: 'http://zap-service.ctenorio.svc.cluster.local:8099'
