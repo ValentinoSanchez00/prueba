@@ -44,7 +44,7 @@ jobs:
 
       - name: Ejecutar ZAP Spider
         env:
-          ZAP_API_URL: 'http://zap-service.ctenorio.svc.cluster.local:8099'
+          ZAP_API_URL: 'zap-api-route-test-ctenorio.ez-ibm-openshift-vpc-3zyj-b9be9ed6ae33d743815245d0b773ebc7-0000.eu-es.containers.appdomain.cloud'
           SCAN_URL: ${{ github.event.inputs.url }}
         run: |
           echo "Iniciando el Spider de ZAP..."
@@ -53,7 +53,7 @@ jobs:
 
       - name: Monitorizar estado del Spider
         env:
-          ZAP_API_URL: 'http://zap-service.ctenorio.svc.cluster.local:8099'
+          ZAP_API_URL: 'zap-api-route-test-ctenorio.ez-ibm-openshift-vpc-3zyj-b9be9ed6ae33d743815245d0b773ebc7-0000.eu-es.containers.appdomain.cloud'
         run: |
           echo "Comprobando estado del Spider..."
           until [ "$(curl -s "${ZAP_API_URL}/JSON/spider/view/status/" | grep -o '100')" ]; do
@@ -63,7 +63,7 @@ jobs:
 
       - name: Generar informe HTML
         env:
-          ZAP_API_URL: 'http://zap-service.ctenorio.svc.cluster.local:8099'
+          ZAP_API_URL: 'zap-api-route-test-ctenorio.ez-ibm-openshift-vpc-3zyj-b9be9ed6ae33d743815245d0b773ebc7-0000.eu-es.containers.appdomain.cloud'
         run: |
           echo "Generando informe en HTML..."
           curl "${ZAP_API_URL}/OTHER/core/other/htmlreport/" -o "zap_report_$(date +'%Y%m%d_%H%M%S').html"
