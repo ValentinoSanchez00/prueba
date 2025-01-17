@@ -17,7 +17,7 @@ spec:
         - name: ibm-registry-secret
       containers:
         - name: zap
-          image: "icr.io/ctenorio-cr/zap2docker-stable"
+          image: "icr.io/cr-vsanchez/zap2docker-stable"
           ports:
             - containerPort: 8099
           args:
