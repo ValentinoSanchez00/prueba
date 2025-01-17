@@ -1,0 +1,13 @@
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: zap-api-route
+  namespace: vsanchez
+spec:
+  path: /
+  to:
+    kind: Service
+    name: zap-service
+  port:
+    targetPort: 8099
+  tls: {}

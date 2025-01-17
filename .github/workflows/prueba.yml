@@ -1,76 +1,48 @@
-name: Prueba de ZAP
+name: ZAP Security Report
 
 on:
+  push:
+    branches:
+      - main
   workflow_dispatch:
-    inputs:
-      url:
-        description: 'URL a probar'
-        required: true
-
-permissions:
-  issues: write
 
 jobs:
-  zap:
-    runs-on: self-hosted
+  zap_security_report:
+    runs-on: ubuntu-latest
+
+    env:
+      ZAP_PROXY_URL: ${{ secrets.ZAP_PROXY_URL }}
+      API_ANALYZE_URL: https://route-ctenorio-ctenorio.ez-ibm-openshift-vpc-b9be9ed6ae33d743815245d0b773ebc7-0000.eu-es.containers.appdomain.cloud/%27
+
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Configurar variables
-        env:
-          ZAP_API_KEY: ${{ secrets.ZAP_API_KEY }}
-          SCAN_URL: ${{ github.event.inputs.url }}
+      - name: Run ZAP Spider
         run: |
-          echo "Configurando variables..."
-          if [ -z "$ZAP_API_KEY" ]; then
-            echo "ERROR: ZAP_API_KEY no está configurado."
-            exit 1
-          fi
-          echo "URL configurada para el escaneo: $SCAN_URL"
-      - name: Prueba curl
-        run: |
-          curl -vk https://zap-api-route-vsanchez.ez-ibm-openshift-vpc-3zyj-b9be9ed6ae33d743815245d0b773ebc7-0000.eu-es.containers.appdomain.cloud
+          curl -k --proxy $ZAP_PROXY_URL "https://zap/JSON/spider/action/scan/?url=$API_ANALYZE_URL"
 
-
-      - name: Logearme Cluster IBM
-        env:
-            APIKEY: ${{ secrets.IBM_API_KEY }}
+      - name: Check Spider Status
         run: |
-              echo "Logeándome en el clúster IBM..."
-              ls -l
-              ibmcloud login --apikey ${APIKEY} -r eu-gb
-              ibmcloud target -g Stemdo_Sandbox
-              ibmcloud cr region-set global
-              ibmcloud cr login
-              ibmcloud cr namespace-add cr-vsanchez
-              ibmcloud ks cluster config --cluster ez-ibm-openshift-vpc-3zyj --admin
-
-      - name: Ejecutar ZAP Spider
-        env:
-          ZAP_API_URL: 'https://zap-api-route-vsanchez.ez-ibm-openshift-vpc-3zyj-b9be9ed6ae33d743815245d0b773ebc7-0000.eu-es.containers.appdomain.cloud'
-          SCAN_URL: ${{ github.event.inputs.url }}
-        run: |
-          echo "Iniciando el Spider de ZAP..."
-          curl "${ZAP_API_URL}/JSON/spider/action/scan/?url=${SCAN_URL}" -o zap_spider_start.json
-          cat zap_spider_start.json
-
-      - name: Monitorizar estado del Spider
-        env:
-          ZAP_API_URL: 'https://zap-api-route-vsanchez.ez-ibm-openshift-vpc-3zyj-b9be9ed6ae33d743815245d0b773ebc7-0000.eu-es.containers.appdomain.cloud'
-        run: |
-          echo "Comprobando estado del Spider..."
-          until [ "$(curl -s "${ZAP_API_URL}/JSON/spider/view/status/" | grep -o '100')" ]; do
-            echo 'El Spider está en ejecución...'; sleep 5;
+          while true; do
+            status=$(curl -k --proxy $ZAP_PROXY_URL -s "https://zap/JSON/spider/view/status/" | grep -o '100')
+            if [[ $status == "100" ]]; then
+              echo "Spider finished."
+              break
+            else
+              echo "Spider is running..."
+              sleep 5
+            fi
           done
-          echo "El Spider ha finalizado."
 
-      - name: Generar informe HTML
-        env:
-          ZAP_API_URL: 'https://zap-api-route-vsanchez.ez-ibm-openshift-vpc-3zyj-b9be9ed6ae33d743815245d0b773ebc7-0000.eu-es.containers.appdomain.cloud'
+      - name: Generate ZAP HTML Report
         run: |
-          echo "Generando informe en HTML..."
-          curl "${ZAP_API_URL}/OTHER/core/other/htmlreport/" -o "zap_report_$(date +'%Y%m%d_%H%M%S').html"
+          curl -k --proxy $ZAP_PROXY_URL "https://zap/OTHER/core/other/htmlreport/" -o "zap_report_ctenorio$(date +'%Y%m%d_%H%M%S').html"
+
+      - name: Generate ZAP JSON Report
+        run: |
+          curl -k --proxy $ZAP_PROXY_URL -X GET "https://zap/JSON/reports/action/generate/?title=${{ github.event.inputs.REPORT_TITLE || 'ZAP_Security_Report_JSON' }}&template=${{ github.event.inputs.REPORT_TEMPLATE || 'traditional-json' }}&description=API+Security+Report_JSON&contexts=&sites=$API_ANALYZE_URL&sections=&includedConfidences=&includedRisks=&reportFileName=zap_report_$(date +'%Y%m%d_%H%M%S').json&display="
+
 
       - name: Subir informe de ZAP
         uses: actions/upload-artifact@v3
