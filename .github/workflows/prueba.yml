@@ -1,9 +1,6 @@
 name: ZAP Security Report
 
 on:
-  push:
-    branches:
-      - main
   workflow_dispatch:
 
 jobs:
