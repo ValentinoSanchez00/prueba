@@ -1,3 +1,6 @@
-10020	.*	IGNORE	Potencial falso positivo en detección de XSS
-40012	.*	FAIL	Posible inyección SQL detectada
-90033	.*	WARN	Revisar configuración de seguridad en cabeceras HTTP
+# ID de la alerta | URL/Regex | Acción | Comentario
+# ---------------------------------------------------------------------
+40012	.*	FAIL	Potencial inyección SQL detectada
+10020	.*	FAIL	Posible Cross-Site Scripting (XSS)
+20012	.*	FAIL	Divulgación de información crítica
+90033	.*	IGNORE	Falso positivo en encabezados de seguridad
