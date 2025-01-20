@@ -24,7 +24,7 @@ jobs:
       with:
         target: '${{ github.event.inputs.url }}'
         token: ${{ secrets.TOKEN }}
-        artifact_name: Escaneo_ZAP-${{ github.event.inputs.url }}-${{ env.DATE }}
+        artifact_name: Escaneo_ZAP-${{ env.DATE }}
 
     - name: Upload ZAP Reports
       uses: actions/upload-artifact@v3
