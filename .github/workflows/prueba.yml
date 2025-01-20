@@ -1,48 +1,26 @@
-name: ZAP Security Report
-
-on:
+name: Prueba de ZAP
+on: 
   workflow_dispatch:
-
+    inputs:
+      url:
+        description: 'URL a probar'
+        required: true
+permissions:
+  issues: write
 jobs:
-  zap_security_report:
-    runs-on: ubuntu-latest
-
-    env:
-      ZAP_PROXY_URL: ${{ secrets.ZAP_PROXY_URL }}
-      API_ANALYZE_URL: https://route-ctenorio-ctenorio.ez-ibm-openshift-vpc-b9be9ed6ae33d743815245d0b773ebc7-0000.eu-es.containers.appdomain.cloud/%27
-
+  zap:
+    runs-on: self-hosted
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+    - name: Checkout code
+      uses: actions/checkout@v3
 
-      - name: Run ZAP Spider
-        run: |
-          curl -k --proxy $ZAP_PROXY_URL "https://zap/JSON/spider/action/scan/?url=$API_ANALYZE_URL"
+    - name: Get current date
+      id: date
+      run: echo "DATE=$(date +'%Y-%m-%d')" >> $GITHUB_ENV
 
-      - name: Check Spider Status
-        run: |
-          while true; do
-            status=$(curl -k --proxy $ZAP_PROXY_URL -s "https://zap/JSON/spider/view/status/" | grep -o '100')
-            if [[ $status == "100" ]]; then
-              echo "Spider finished."
-              break
-            else
-              echo "Spider is running..."
-              sleep 5
-            fi
-          done
-
-      - name: Generate ZAP HTML Report
-        run: |
-          curl -k --proxy $ZAP_PROXY_URL "https://zap/OTHER/core/other/htmlreport/" -o "zap_report_ctenorio$(date +'%Y%m%d_%H%M%S').html"
-
-      - name: Generate ZAP JSON Report
-        run: |
-          curl -k --proxy $ZAP_PROXY_URL -X GET "https://zap/JSON/reports/action/generate/?title=${{ github.event.inputs.REPORT_TITLE || 'ZAP_Security_Report_JSON' }}&template=${{ github.event.inputs.REPORT_TEMPLATE || 'traditional-json' }}&description=API+Security+Report_JSON&contexts=&sites=$API_ANALYZE_URL&sections=&includedConfidences=&includedRisks=&reportFileName=zap_report_$(date +'%Y%m%d_%H%M%S').json&display="
-
-
-      - name: Subir informe de ZAP
-        uses: actions/upload-artifact@v3
-        with:
-          name: zap-report
-          path: zap_report_*.html
+    - name: Run ZAP Full Scan
+      uses: zaproxy/action-full-scan@v0.12.0
+      with:
+        target: '${{ github.event.inputs.url }}'
+        token: ${{ secrets.TOKEN }}
+        artifact_name: Escaneo_ZAP-${{ github.event.inputs.url }}-${{ env.DATE }}

@@ -33,9 +33,19 @@ spec:
             - api.addrs.addr.regex=true
             - -config
             - api.disablekey=true
+            - -config
+            - server.ssl.key=/etc/ssl/certs/zap.key
+            - -config
+            - server.ssl.cert=/etc/ssl/certs/zap.crt
           volumeMounts:
             - name: zap-data
               mountPath: /home/zap/.ZAP/
+            - name: zap-tls-secret
+              mountPath: /etc/ssl/certs/
+              readOnly: true
       volumes:
         - name: zap-data
           emptyDir: {}
+        - name: zap-tls-secret
+          secret:
+            secretName: zap-tls-secret
