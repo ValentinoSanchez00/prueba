@@ -107,7 +107,7 @@ Si deseas ignorar ciertas alertas durante el escaneo, puedes crear un archivo `.
     - FAIL – Tratar la alerta como crítica y hacer fallar la acción.
 - Comentario: Descripción opcional para indicar el motivo de la regla.
 
-Para encontrar los códigos de alerta de ZAP, consulta la [documentación oficial]()
+Para encontrar los códigos de alerta de ZAP, consulta la [documentación oficial](https://github.com/marketplace/actions/zap-full-scan)
 
 ## Reporte de Resultados
 
