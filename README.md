@@ -1,6 +1,6 @@
 # GitHub Action: OWASP ZAP Full Scan
 
-Esta acción de GitHub (`zaproxy/action-full-scan@v0.12.0`) permite ejecutar un escaneo completo de seguridad en aplicaciones web utilizando ![OWASP ZAP](https://www.zaproxy.org/). El escaneo realizado por esta acción incluye:
+Esta acción de GitHub (`zaproxy/action-full-scan@v0.12.0`) permite ejecutar un escaneo completo de seguridad en aplicaciones web utilizando [OWASP ZAP](https://www.zaproxy.org/). El escaneo realizado por esta acción incluye:
 
 - **Spider tradicional**: Rastreo básico del sitio web.
 - **Spider AJAX (opcional)**: Rastreo adicional para aplicaciones dinámicas basadas en AJAX.
