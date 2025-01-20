@@ -6,6 +6,7 @@ on:
         description: 'URL a probar'
         required: true
 permissions:
+  contents: write
   issues: write
 jobs:
   zap:
@@ -24,3 +25,12 @@ jobs:
         target: '${{ github.event.inputs.url }}'
         token: ${{ secrets.TOKEN }}
         artifact_name: Escaneo_ZAP-${{ github.event.inputs.url }}-${{ env.DATE }}
+
+    - name: Upload ZAP Reports
+      uses: actions/upload-artifact@v3
+      with:
+        name: Escaneo_ZAP-${{ github.event.inputs.url }}-${{ env.DATE }}
+        path: |
+          /home/user/actions-runner/_work/prueba/prueba/report_html.html
+          /home/user/actions-runner/_work/prueba/prueba/report_md.md
+          /home/user/actions-runner/_work/prueba/prueba/report_json.json
