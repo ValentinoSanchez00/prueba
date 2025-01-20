@@ -1,36 +1,43 @@
 name: Prueba de ZAP
+
 on: 
   workflow_dispatch:
     inputs:
       url:
         description: 'URL a probar'
         required: true
+
 permissions:
   contents: write
   issues: write
+
 jobs:
   zap:
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-    - name: Get current date
-      id: date
-      run: echo "DATE=$(date +'%Y-%m-%d')" >> $GITHUB_ENV
+      - name: Get current date
+        id: date
+        run: echo "DATE=$(date +'%Y-%m-%d')" >> $GITHUB_ENV
 
-    - name: Run ZAP Full Scan
-      uses: zaproxy/action-full-scan@v0.12.0
-      with:
-        target: '${{ github.event.inputs.url }}'
-        token: ${{ secrets.TOKEN }}
-        artifact_name: Escaneo_ZAP-${{ env.DATE }}
+      - name: List files in directory
+        run: ls
 
-    - name: Upload ZAP Reports
-      uses: actions/upload-artifact@v3
-      with:
-        name: Escaneo_ZAP-${{ github.event.inputs.url }}-${{ env.DATE }}
-        path: |
-          /home/user/actions-runner/_work/prueba/prueba/report_html.html
-          /home/user/actions-runner/_work/prueba/prueba/report_md.md
-          /home/user/actions-runner/_work/prueba/prueba/report_json.json
+      - name: Run ZAP Full Scan
+        uses: zaproxy/action-full-scan@v0.12.0
+        with:
+          target: '${{ github.event.inputs.url }}'
+          token: ${{ secrets.TOKEN }}
+          artifact_name: Escaneo_ZAP-${{ env.DATE }}
+          rules_file_name: rules.tsv
+
+      - name: Upload ZAP Reports
+        uses: actions/upload-artifact@v3
+        with:
+          name: Escaneo_ZAP-${{ github.event.inputs.url }}-${{ env.DATE }}
+          path: |
+            /home/user/actions-runner/_work/prueba/prueba/report_html.html
+            /home/user/actions-runner/_work/prueba/prueba/report_md.md
+            /home/user/actions-runner/_work/prueba/prueba/report_json.json
